@@ -28,6 +28,7 @@ class Board
     vector<vector<Piece>> board;
     bool check;
     bool completed;
+    Color turn;
 
 public:
     Board() : board(8, vector<Piece>(8, {Color::NONE, PieceType::NONE}))
@@ -57,8 +58,12 @@ public:
         // queens
         board[0][4] = {Color::WHITE, PieceType::QUEEN};
         board[7][4] = {Color::BLACK, PieceType::QUEEN};
+
+        // set turn
+        turn = Color::WHITE;
     }
 
+    // helper functions
     bool insideBoard(int row, int col)
     {
         return (row < 8 && col < 8 && row >= 0 && col >= 0);
@@ -74,11 +79,20 @@ public:
         return (board[row][col].color != color && board[row][col].color != Color::NONE);
     }
 
+    void toggleTurn()
+    {
+        turn = (turn == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    }
+
+    c
+    // pawn logic
     void pawnCapture(int row, int col, Color color, vector<pair<int, int>> &legalMoves)
     {
         int dr;
-        if(color == Color::WHITE)dr = 1;
-        else dr = -1;
+        if (color == Color::WHITE)
+            dr = 1;
+        else
+            dr = -1;
         if (insideBoard(row + dr, col + 1) && isOpponent(row + dr, col + 1, color))
             legalMoves.push_back({row + dr, col + 1});
         if (insideBoard(row + dr, col - 1) && isOpponent(row + dr, col - 1, color))
@@ -126,12 +140,12 @@ public:
                 auto [dr, dc] = moves[j];
                 for (int i = 1; i < 8; ++i)
                 {
-                    if (insideBoard(row + i*dr, col + i*dc) && emptySquare(row + i*dr, col + i*dc))
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                    if (insideBoard(row + i * dr, col + i * dc) && emptySquare(row + i * dr, col + i * dc))
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                     // capture
-                    else if (insideBoard(row + i*dr, col + i*dc) && isOpponent(row + i*dr , col + i*dc, color))
+                    else if (insideBoard(row + i * dr, col + i * dc) && isOpponent(row + i * dr, col + i * dc, color))
                     {
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                         break;
                     }
                     else
@@ -143,18 +157,18 @@ public:
         // bishops
         if (type == PieceType::BISHOP)
         {
-           vector<pair<int, int>> moves = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+            vector<pair<int, int>> moves = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
             for (int j = 0; j < 4; ++j)
             {
                 auto [dr, dc] = moves[j];
                 for (int i = 1; i < 8; ++i)
                 {
-                    if (insideBoard(row + i*dr, col + i*dc) && emptySquare(row + i*dr, col + i*dc))
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                    if (insideBoard(row + i * dr, col + i * dc) && emptySquare(row + i * dr, col + i * dc))
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                     // capture
-                    else if (insideBoard(row + i*dr, col + i*dc) && isOpponent(row + i*dr , col + i*dc, color))
+                    else if (insideBoard(row + i * dr, col + i * dc) && isOpponent(row + i * dr, col + i * dc, color))
                     {
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                         break;
                     }
                     else
@@ -172,7 +186,7 @@ public:
             for (int i = 0; i < 8; ++i)
             {
                 auto [dr, dc] = moves[i];
-                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row+dr,col+dc,color)))
+                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row + dr, col + dc, color)))
                     legalMoves.push_back({row + dr, col + dc});
             }
         }
@@ -181,18 +195,18 @@ public:
 
         if (type == PieceType::QUEEN)
         {
-            vector<pair<int, int>> moves = {{1, 0}, {0, 1}, {-1, 0}, {0, -1},{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+            vector<pair<int, int>> moves = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
             for (int j = 0; j < 8; ++j)
             {
                 auto [dr, dc] = moves[j];
                 for (int i = 1; i < 8; ++i)
                 {
-                    if (insideBoard(row + i*dr, col + i*dc) && emptySquare(row + i*dr, col + i*dc))
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                    if (insideBoard(row + i * dr, col + i * dc) && emptySquare(row + i * dr, col + i * dc))
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                     // capture
-                    else if (insideBoard(row + i*dr, col + i*dc) && isOpponent(row + i*dr , col + i*dc, color))
+                    else if (insideBoard(row + i * dr, col + i * dc) && isOpponent(row + i * dr, col + i * dc, color))
                     {
-                        legalMoves.push_back({row + i*dr, col + i*dc});
+                        legalMoves.push_back({row + i * dr, col + i * dc});
                         break;
                     }
                     else
@@ -208,10 +222,36 @@ public:
             for (int i = 0; i < 8; ++i)
             {
                 auto [dr, dc] = moves[i];
-                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row+dr,col+dc,color)))
+                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row + dr, col + dc, color)))
                     legalMoves.push_back({row + dr, col + dc});
             }
         }
         return legalMoves;
+    }
+
+    void movePiece(int fromRow, int fromCol, int toRow, int toCol)
+    {
+        if (insideBoard(fromRow, fromCol) && board[fromRow][fromCol].type != PieceType::NONE && board[fromRow][fromCol].color == turn)
+        {
+            auto legalMoves = getLegalMoves(fromRow, fromCol);
+
+            bool legal = false;
+
+            for (auto [r, c] : legalMoves)
+            {
+                if (r == toRow && c == toCol)
+                {
+                    legal = true;
+                    break;
+                }
+            }
+            if (!legal)
+                return;
+            if (!insideBoard(toRow, toCol))
+                return;
+            board[toRow][toCol] = board[fromRow][fromCol];
+            board[fromRow][fromCol] = {Color::NONE, PieceType::NONE};
+            toggleTurn();
+        }
     }
 };
