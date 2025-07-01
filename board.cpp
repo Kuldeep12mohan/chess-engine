@@ -61,25 +61,28 @@ public:
 
     bool insideBoard(int row, int col)
     {
-        return (row < 8 && col < 8 && row >= 0 && col >= 0) && true;
+        return (row < 8 && col < 8 && row >= 0 && col >= 0);
     }
 
     bool emptySquare(int row, int col)
     {
-        return (board[row][col].type == PieceType::NONE) && true;
+        return (board[row][col].type == PieceType::NONE);
     }
 
     bool isOpponent(int row, int col, Color color)
     {
-        return (board[row][col].color != color) && true;
+        return (board[row][col].color != color && board[row][col].color != Color::NONE);
     }
 
     void pawnCapture(int row, int col, Color color, vector<pair<int, int>> &legalMoves)
     {
-        if (insideBoard(row + 1, col + 1) && isOpponent(row + 1, col + 1, color))
-            legalMoves.push_back({row + 1, col + 1});
-        if (insideBoard(row + 1, col - 1) && isOpponent(row + 1, col - 1, color))
-            legalMoves.push_back({row + 1, col - 1});
+        int dr;
+        if(color == Color::WHITE)dr = 1;
+        else dr = -1;
+        if (insideBoard(row + dr, col + 1) && isOpponent(row + dr, col + 1, color))
+            legalMoves.push_back({row + dr, col + 1});
+        if (insideBoard(row + dr, col - 1) && isOpponent(row + dr, col - 1, color))
+            legalMoves.push_back({row + dr, col - 1});
     }
     vector<pair<int, int>> getLegalMoves(int row, int col)
     {
@@ -169,7 +172,7 @@ public:
             for (int i = 0; i < 8; ++i)
             {
                 auto [dr, dc] = moves[i];
-                if (insideBoard(row + dr, col + dc) && emptySquare(row + dr, col + dc))
+                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row+dr,col+dc,color)))
                     legalMoves.push_back({row + dr, col + dc});
             }
         }
@@ -179,7 +182,7 @@ public:
         if (type == PieceType::QUEEN)
         {
             vector<pair<int, int>> moves = {{1, 0}, {0, 1}, {-1, 0}, {0, -1},{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-            for (int j = 0; j < 4; ++j)
+            for (int j = 0; j < 8; ++j)
             {
                 auto [dr, dc] = moves[j];
                 for (int i = 1; i < 8; ++i)
@@ -205,7 +208,7 @@ public:
             for (int i = 0; i < 8; ++i)
             {
                 auto [dr, dc] = moves[i];
-                if (insideBoard(row + dr, col + dc) && emptySquare(row + dr, col + dc))
+                if (insideBoard(row + dr, col + dc) && (emptySquare(row + dr, col + dc) || isOpponent(row+dr,col+dc,color)))
                     legalMoves.push_back({row + dr, col + dc});
             }
         }
