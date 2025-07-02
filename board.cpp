@@ -561,11 +561,11 @@ pair<Move, int> minimax(Board &board, int depth, bool maximizingPlayer)
 
         if (maximizingPlayer && eval > bestMove.second)
         {
-            bestMove = {move, eval}; // 💡 store current move, not the recursive one
+            bestMove = {move, eval}; 
         }
         if (!maximizingPlayer && eval < bestMove.second)
         {
-            bestMove = {move, eval}; // 💡 store current move
+            bestMove = {move, eval}; 
         }
     }
 
