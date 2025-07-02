@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <string>
 using namespace std;
 
 enum class Color
@@ -61,12 +62,12 @@ public:
         board[7][2] = board[7][5] = {Color::BLACK, PieceType::BISHOP};
 
         // king
-        board[0][3] = {Color::WHITE, PieceType::KING};
-        board[7][3] = {Color::BLACK, PieceType::KING};
+        board[0][4] = {Color::WHITE, PieceType::KING};
+        board[7][4] = {Color::BLACK, PieceType::KING};
 
         // queens
-        board[0][4] = {Color::WHITE, PieceType::QUEEN};
-        board[7][4] = {Color::BLACK, PieceType::QUEEN};
+        board[0][3] = {Color::WHITE, PieceType::QUEEN};
+        board[7][3] = {Color::BLACK, PieceType::QUEEN};
 
         // set turn
         turn = Color::WHITE;
@@ -92,6 +93,55 @@ public:
     void toggleTurn()
     {
         turn = (turn == Color::WHITE) ? Color::BLACK : Color::WHITE;
+    }
+
+    void printBoard()
+    {
+        cout << "  a b c d e f g h\n";
+        for (int i = 7; i >= 0; --i)
+        {
+            cout << i + 1 << " ";
+            for (int j = 0; j < 8; ++j)
+            {
+                char c = '.';
+                if (board[i][j].type != PieceType::NONE)
+                {
+                    switch (board[i][j].type)
+                    {
+                    case PieceType::PAWN:
+                        c = 'P';
+                        break;
+                    case PieceType::ROOK:
+                        c = 'R';
+                        break;
+                    case PieceType::KNIGHT:
+                        c = 'N';
+                        break;
+                    case PieceType::BISHOP:
+                        c = 'B';
+                        break;
+                    case PieceType::QUEEN:
+                        c = 'Q';
+                        break;
+                    case PieceType::KING:
+                        c = 'K';
+                        break;
+                    default:
+                        break;
+                    }
+                    if (board[i][j].color == Color::BLACK)
+                        c = tolower(c);
+                }
+                cout << c << " ";
+            }
+            cout << i + 1 << "\n";
+        }
+        cout << "  a b c d e f g h\n\n";
+    }
+
+    Piece getPiece(int row, int col)
+    {
+        return board[row][col];
     }
 
     bool isInCheck(Color color)
@@ -173,8 +223,10 @@ public:
 
     bool getTurn()
     {
-        if(turn == Color::WHITE)return true;
-        else return false;
+        if (turn == Color::WHITE)
+            return true;
+        else
+            return false;
     }
     void makeMove(int fromRow, int fromCol, int toRow, int toCol)
     {
@@ -183,6 +235,7 @@ public:
 
         board[toRow][toCol] = board[fromRow][fromCol];            // move piece
         board[fromRow][fromCol] = {Color::NONE, PieceType::NONE}; // empty the source
+        toggleTurn();
     }
 
     void undoMove()
@@ -200,6 +253,7 @@ public:
         moveHistory.pop();
         board[fromRow][fromCol] = board[toRow][toCol];
         board[toRow][toCol] = captured;
+        toggleTurn();
     }
     // pawn logic
     void pawnCapture(int row, int col, Color color, vector<pair<int, int>> &legalMoves)
@@ -486,50 +540,88 @@ public:
         return res;
     }
 };
-int minimax(Board &board, int depth, bool maximizingPlayer)
+pair<Move, int> minimax(Board &board, int depth, bool maximizingPlayer)
 {
     if (depth == 0 || board.isGameOver())
-        return board.eval();
+    {
+        return {{-1, -1, -1, -1, {Color::NONE, PieceType::NONE}}, board.eval()};
+    }
 
     Color color = maximizingPlayer ? Color::WHITE : Color::BLACK;
     auto moves = board.generateAllMoves(color);
-    if (maximizingPlayer)
+
+    pair<Move, int> bestMove;
+    bestMove.second = maximizingPlayer ? INT_MIN : INT_MAX;
+
+    for (const Move &move : moves)
     {
-        int maxEval = INT_MIN;
-        for (Move move : moves)
+        board.makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
+        int eval = minimax(board, depth - 1, !maximizingPlayer).second;
+        board.undoMove();
+
+        if (maximizingPlayer && eval > bestMove.second)
         {
-            board.makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
-            int eval = minimax(board, depth - 1, false);
-            board.undoMove();
-            maxEval = max(maxEval, eval);
+            bestMove = {move, eval}; // 💡 store current move, not the recursive one
         }
-        return maxEval;
-    }
-    else
-    {
-        int minEval = INT_MAX;
-        for (Move move : moves)
+        if (!maximizingPlayer && eval < bestMove.second)
         {
-            board.makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
-            int eval = minimax(board, depth - 1, true);
-            board.undoMove();
-            minEval = min(minEval, eval);
+            bestMove = {move, eval}; // 💡 store current move
         }
-        return minEval;
     }
+
+    return bestMove;
 }
+
 int main()
 {
     Board board;
-    board.movePiece(1, 3, 3, 3); // White pawn from e2 to e4
-    board.movePiece(6, 3, 4, 3); // Black pawn from e7 to e5
-    board.movePiece(0, 1, 2, 2); //knight from g1 to f3 
-    board.movePiece(7,6,5,5);// knight c6
-    board.movePiece(0,2,5,3);//bishop c4
-    board.movePiece(7,1,5,2);//knight f6
-    board.movePiece(2,2,4,1);//knight g5
-    board.movePiece(6,0,5,0);//h6
-    
-    int best = minimax(board, 3,board.getTurn());
-    cout << best << endl;
+
+    cout << "------- Chess mini‑engine -------\n";
+    cout << "Press 1 to start: ";
+    int start;
+    cin >> start;
+    if (start != 1)
+        return 0;
+
+    while (!board.isGameOver())
+    {
+        /* -------- PLAYER TURN -------- */
+        board.printBoard();
+
+        cout << "Your move (e.g. e2 e4): ";
+        string from, to;
+        cin >> from >> to;
+
+        int fromRow = from[1] - '1';
+        int fromCol = from[0] - 'a';
+        int toRow = to[1] - '1';
+        int toCol = to[0] - 'a';
+
+        board.movePiece(fromRow, fromCol, toRow, toCol);
+
+        if (board.isGameOver()) 
+        {
+            board.printBoard();
+            break;
+        }
+
+        /* -------- ENGINE TURN -------- */
+        cout << "\nEngine thinking …\n";
+        auto best = minimax(board, 3, board.getTurn());
+
+        board.makeMove(best.first.fromRow,
+                       best.first.fromCol,
+                       best.first.toRow,
+                       best.first.toCol);
+
+        board.printBoard(); 
+        Piece moved = board.getPiece(best.first.toRow, best.first.toCol);
+        const char *names[] = {
+            "king", "queen", "rook", "bishop", "knight", "pawn", "none"};
+        cout << names[static_cast<int>(moved.type)]
+             << " to " << char('a' + best.first.toCol) << best.first.toRow + 1
+             << "  (eval = " << best.second << ")\n\n";
+    }
+
+    cout << "Game over!\n";
 }
