@@ -540,7 +540,7 @@ public:
         return res;
     }
 };
-pair<Move, int> minimax(Board &board, int depth, bool maximizingPlayer)
+pair<Move, int> minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer)
 {
     if (depth == 0 || board.isGameOver())
     {
@@ -556,21 +556,29 @@ pair<Move, int> minimax(Board &board, int depth, bool maximizingPlayer)
     for (const Move &move : moves)
     {
         board.makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
-        int eval = minimax(board, depth - 1, !maximizingPlayer).second;
+        int eval = minimax(board, depth - 1, alpha, beta, !maximizingPlayer).second;
         board.undoMove();
 
-        if (maximizingPlayer && eval > bestMove.second)
+        if (maximizingPlayer)
         {
-            bestMove = {move, eval}; 
+            if (eval > bestMove.second)
+                bestMove = {move, eval};
+            alpha = max(alpha, eval);
         }
-        if (!maximizingPlayer && eval < bestMove.second)
+        else
         {
-            bestMove = {move, eval}; 
+            if (eval < bestMove.second)
+                bestMove = {move, eval};
+            beta = min(beta, eval);
         }
+
+        if (beta <= alpha)
+            break; // Prune
     }
 
     return bestMove;
 }
+
 
 int main()
 {
@@ -607,7 +615,7 @@ int main()
 
         /* -------- ENGINE TURN -------- */
         cout << "\nEngine thinking …\n";
-        auto best = minimax(board, 3, board.getTurn());
+        auto best = minimax(board, 4,INT_MIN,INT_MAX, board.getTurn());
 
         board.makeMove(best.first.fromRow,
                        best.first.fromCol,
