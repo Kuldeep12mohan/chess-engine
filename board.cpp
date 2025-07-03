@@ -184,6 +184,22 @@ public:
         return false;
     }
 
+    pair<int, int> kingPosition(Color color)
+    {
+        pair<int, int> pos;
+        for (int i = 0; i < 8; ++i)
+        {
+            for (int j = 0; j < 8; ++j)
+            {
+                if (board[i][j].type == PieceType::KING && board[i][j].color == color)
+                {
+                    pos = {i, j};
+                }
+            }
+        }
+        return pos;
+    }
+
     bool noLegalMoves(Color color)
     {
         for (int i = 0; i < 8; ++i)
@@ -233,7 +249,15 @@ public:
         Move m = {fromRow, fromCol, toRow, toCol, board[toRow][toCol]};
         moveHistory.push(m);
 
-        board[toRow][toCol] = board[fromRow][fromCol];            // move piece
+        Piece piece = board[fromRow][fromCol];
+        board[toRow][toCol] = board[fromRow][fromCol];
+        if (piece.type == PieceType::PAWN)
+        {
+            if (piece.color == Color::WHITE && toRow == 7)
+                board[toRow][toCol] = {Color::WHITE, PieceType::QUEEN};
+            if (piece.color == Color::BLACK && toRow == 0)
+                board[toRow][toCol] = {Color::BLACK, PieceType::QUEEN};
+        }
         board[fromRow][fromCol] = {Color::NONE, PieceType::NONE}; // empty the source
         toggleTurn();
     }
@@ -450,8 +474,17 @@ public:
 
             // simulating a move
 
+            Piece piece = board[fromRow][fromCol];
             board[toRow][toCol] = board[fromRow][fromCol];
-            board[fromRow][fromCol] = {Color::NONE, PieceType::NONE};
+            if (piece.type == PieceType::PAWN)
+            {
+                if (piece.color == Color::WHITE && toRow == 7)
+                    board[toRow][toCol] = {Color::WHITE, PieceType::QUEEN};
+                if (piece.color == Color::BLACK && toRow == 0)
+                    board[toRow][toCol] = {Color::BLACK, PieceType::QUEEN};
+            }
+
+            board[fromRow][fromCol] = {Color::NONE, PieceType::NONE}; // empty the source
 
             bool illegal = isInCheck(turn);
             if (illegal)
@@ -484,6 +517,7 @@ public:
     }
     int eval()
     {
+        // material advantage based evaluation
         int res = 0;
         for (int i = 0; i < 8; ++i)
         {
@@ -542,12 +576,13 @@ public:
 };
 pair<Move, int> minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer)
 {
-    if (depth == 0 || board.isGameOver())
+    Color color = maximizingPlayer ? Color::WHITE : Color::BLACK;
+    if (depth == 0 || board.noLegalMoves(color))
     {
-        return {{-1, -1, -1, -1, {Color::NONE, PieceType::NONE}}, board.eval()};
+        int eval = board.eval();
+        return {{-1, -1, -1, -1, {Color::NONE, PieceType::NONE}}, eval};
     }
 
-    Color color = maximizingPlayer ? Color::WHITE : Color::BLACK;
     auto moves = board.generateAllMoves(color);
 
     pair<Move, int> bestMove;
@@ -573,12 +608,11 @@ pair<Move, int> minimax(Board &board, int depth, int alpha, int beta, bool maxim
         }
 
         if (beta <= alpha)
-            break; // Prune
+            break;
     }
 
     return bestMove;
 }
-
 
 int main()
 {
@@ -607,7 +641,7 @@ int main()
 
         board.movePiece(fromRow, fromCol, toRow, toCol);
 
-        if (board.isGameOver()) 
+        if (board.isGameOver())
         {
             board.printBoard();
             break;
@@ -615,14 +649,14 @@ int main()
 
         /* -------- ENGINE TURN -------- */
         cout << "\nEngine thinking …\n";
-        auto best = minimax(board, 4,INT_MIN,INT_MAX, board.getTurn());
+        auto best = minimax(board, 5, INT_MIN, INT_MAX, board.getTurn());
 
         board.makeMove(best.first.fromRow,
                        best.first.fromCol,
                        best.first.toRow,
                        best.first.toCol);
 
-        board.printBoard(); 
+        board.printBoard();
         Piece moved = board.getPiece(best.first.toRow, best.first.toCol);
         const char *names[] = {
             "king", "queen", "rook", "bishop", "knight", "pawn", "none"};
